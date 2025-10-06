@@ -10,11 +10,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
 
   <style>
-    /* Center the card vertically and horizontally */
     body, html { height: 100%; }
     .center-wrap { min-height: 100vh; }
     .card-max { max-width: 1000px; width: 100%; }
-    /* Make header checkbox look 'greyed out' when one selected */
     .checkall-one-selected { opacity: .5; }
     th .sort-btn { white-space: nowrap; }
     th .sort-btn .bi { opacity: .6; }
@@ -36,16 +34,15 @@
     <div class="card shadow-sm card-max">
       <div class="card-header bg-white">
         <div class="d-flex align-items-center gap-2">
-          <!-- Toolbar -->
           <div class="d-flex">
             <button id="btnBlock" class="btn btn-outline-danger btn-sm me-2" disabled>
               <i class="bi bi-lock me-1"></i> Block
             </button>
             <button id="btnUnblock" class="btn btn-outline-secondary btn-sm me-2" disabled>
-              <i class="bi bi-unlock me-1"></i>
+              <i class="bi bi-unlock me-1"></i> Unblock
             </button>
             <button id="btnDelete" class="btn btn-outline-danger btn-sm" disabled>
-              <i class="bi bi-trash3 me-1"></i>
+              <i class="bi bi-trash3 me-1"></i> Delete
             </button>
           </div>
 
@@ -54,6 +51,9 @@
           </div>
         </div>
       </div>
+
+      <!-- notice area -->
+      <div id="tableNotice" class="px-3 pt-3 d-none"></div>
 
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -92,6 +92,7 @@
     </div>
   </div>
 
+  <!-- IMPORTANT: served by Express.static('public'), so /table.js resolves to public/table.js -->
   <script type="module" src="/table.js"></script>
 </body>
 </html>
