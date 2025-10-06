@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Users</title>
+
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+
+  <style>
+    /* Center the card vertically and horizontally */
+    body, html { height: 100%; }
+    .center-wrap { min-height: 100vh; }
+    .card-max { max-width: 1000px; width: 100%; }
+    /* Make header checkbox look 'greyed out' when one selected */
+    .checkall-one-selected { opacity: .5; }
+    th .sort-btn { white-space: nowrap; }
+    th .sort-btn .bi { opacity: .6; }
+  </style>
+</head>
+
+<body class="bg-light">
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-light bg-white shadow-sm px-3">
+    <div class="container-fluid">
+      <span class="navbar-brand fw-semibold text-primary">User Dashboard</span>
+      <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-box-arrow-right me-1"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <div class="container center-wrap d-flex align-items-center justify-content-center py-4">
+    <div class="card shadow-sm card-max">
+      <div class="card-header bg-white">
+        <div class="d-flex align-items-center gap-2">
+          <!-- Toolbar -->
+          <div class="d-flex">
+            <button id="btnBlock" class="btn btn-outline-danger btn-sm me-2" disabled>
+              <i class="bi bi-lock me-1"></i> Block
+            </button>
+            <button id="btnUnblock" class="btn btn-outline-secondary btn-sm me-2" disabled>
+              <i class="bi bi-unlock me-1"></i>
+            </button>
+            <button id="btnDelete" class="btn btn-outline-danger btn-sm" disabled>
+              <i class="bi bi-trash3 me-1"></i>
+            </button>
+          </div>
+
+          <div class="ms-auto" style="max-width: 260px;">
+            <input id="filterInput" type="search" class="form-control form-control-sm" placeholder="Filter by name/email">
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="usersTable">
+            <thead class="table-light">
+              <tr>
+                <th style="width:42px;">
+                  <input class="form-check-input" type="checkbox" id="checkAll" title="Select all">
+                </th>
+                <th>
+                  <button class="btn btn-link sort-btn p-0 text-decoration-none text-reset" data-sort="name">
+                    Name <i class="bi bi-arrow-down-up ms-1"></i>
+                  </button>
+                </th>
+                <th>
+                  <button class="btn btn-link sort-btn p-0 text-decoration-none text-reset" data-sort="email">
+                    Email <i class="bi bi-arrow-down-up ms-1"></i>
+                  </button>
+                </th>
+                <th>
+                  <button class="btn btn-link sort-btn p-0 text-decoration-none text-reset" data-sort="status">
+                    Status <i class="bi bi-arrow-down-up ms-1"></i>
+                  </button>
+                </th>
+                <th>
+                  <button class="btn btn-link sort-btn p-0 text-decoration-none text-reset" data-sort="last_login">
+                    Last active <i class="bi bi-arrow-down-up ms-1"></i>
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="userRows"><!-- rows injected --></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/table.js"></script>
+</body>
+</html>
