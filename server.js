@@ -7,6 +7,7 @@ const { randomUUID } = require('crypto');
 const { DataTypes } = require('sequelize');
 const sequelize = require('./db');
 const { Resend } = require('resend');
+const { Op } = require('sequelize');
 
 const app = express();
 
@@ -77,6 +78,53 @@ async function authGuard(req, res, next) {
     return res.status(401).json({ error: 'Invalid token', redirectTo: '/login.html' });
   }
 }
+
+app.use('/api', authGuard);
+
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const sort = String(req.query.sort || 'name').toLowerCase();
+    const dir  = String(req.query.dir  || 'asc').toLowerCase();
+    const sortMap = { name: 'name', email: 'email', status: 'status', last_login: 'last_login' };
+    const col = sortMap[sort] || 'name';
+    const direction = dir === 'desc' ? 'DESC' : 'ASC';
+
+    const rows = await User.findAll({
+      attributes: ['id','name','email','status','last_login','last_activity','created_at'],
+      order: [[col, direction]],
+    });
+
+    res.json(rows); // <-- return an array; your table.js expects this
+  } catch (e) {
+    console.error('GET /api/users failed:', e);
+    res.status(500).json({ error: 'Failed to load users' });
+  }
+});
+
+// Bulk block
+app.patch('/api/users/block', async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  if (!ids.length) return res.status(400).json({ error: 'No ids' });
+  await User.update({ status: 'blocked' }, { where: { id: { [Op.in]: ids } } });
+  res.json({ updated: ids.length });
+});
+
+// Bulk unblock
+app.patch('/api/users/unblock', async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  if (!ids.length) return res.status(400).json({ error: 'No ids' });
+  await User.update({ status: 'active' }, { where: { id: { [Op.in]: ids } } });
+  res.json({ updated: ids.length });
+});
+
+// Bulk delete
+app.delete('/api/users', async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  if (!ids.length) return res.status(400).json({ error: 'No ids' });
+  const count = await User.destroy({ where: { id: { [Op.in]: ids } } });
+  res.json({ deleted: count });
+});
 
 // ----- AUTH ROUTES -----
 // REGISTER (unchanged logic; only uses APP_BASE_URL safely)
