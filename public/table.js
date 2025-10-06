@@ -1,3 +1,5 @@
+// public/table.js
+
 // ---------------------------
 // Token + headers utilities
 // ---------------------------
@@ -16,86 +18,29 @@ function authHeaders() {
 // State
 // ---------------------------
 const state = {
-  sort: 'name',   // default sort by name
-  dir: 'asc',     // default ascending
-  users: [],
-  apiPath: '/api/users' // will auto-fallback to '/users' if needed
+  sort: 'name',     // default sort by name
+  dir: 'asc',       // default ascending
+  users: [],        // fetched data
 };
-
-// ---------------------------
-// Helpers
-// ---------------------------
-const noticeBox = document.getElementById('tableNotice');
-function showNotice(html, type = 'info') {
-  if (!noticeBox) return;
-  noticeBox.className = '';
-  noticeBox.classList.add('px-3','pt-3',`text-${type}`);
-  noticeBox.innerHTML = html;
-  noticeBox.classList.remove('d-none');
-}
-function hideNotice() {
-  if (!noticeBox) return;
-  noticeBox.classList.add('d-none');
-  noticeBox.innerHTML = '';
-}
 
 // ---------------------------
 // Fetch + render
 // ---------------------------
-async function fetchUsersOnce(path) {
-  const url = `${path}?sort=${encodeURIComponent(state.sort)}&dir=${encodeURIComponent(state.dir)}`;
-  console.log('Fetching users from:', url);
-  const res = await fetch(url, { headers: authHeaders() });
+async function loadUsers() {
+  const res = await fetch(`/api/users?sort=${encodeURIComponent(state.sort)}&dir=${encodeURIComponent(state.dir)}`, {
+    headers: authHeaders()
+  });
+
   if (res.status === 401 || res.status === 403) {
-    // redirect to login if not authorized
     const body = await res.json().catch(() => ({}));
     location.href = body.redirectTo || '/login.html';
-    return null;
-  }
-  if (!res.ok) {
-    throw new Error(`Users fetch failed: ${res.status}`);
-  }
-  const data = await res.json();
-  if (!Array.isArray(data)) {
-    throw new Error('Users API did not return an array.');
-  }
-  return data;
-}
-
-async function loadUsers() {
-  hideNotice();
-  // try /api/users, fallback to /users
-  try {
-    let users = await fetchUsersOnce(state.apiPath);
-    if (users === null) return; // redirected
-    // If /api/users 404/500, try /users once
-  } catch (e1) {
-    console.warn('Primary users endpoint failed:', e1.message);
-    try {
-      state.apiPath = '/users';
-      const users2 = await fetchUsersOnce(state.apiPath);
-      if (users2 === null) return;
-      state.users = users2;
-      renderRows(state.users);
-      updateSortIndicators();
-      updateHeaderCheckboxState();
-      if (!users2.length) showNotice('<em>No users found.</em>', 'secondary');
-      return;
-    } catch (e2) {
-      console.error('Fallback users endpoint failed:', e2.message);
-      showNotice('Failed to load users. Please try again later.', 'danger');
-      return;
-    }
+    return;
   }
 
-  // if first call succeeded, we’ll be here:
-  const users = await fetchUsersOnce(state.apiPath);
-  if (users === null) return;
-  state.users = users;
+  state.users = await res.json();
   renderRows(state.users);
   updateSortIndicators();
   updateHeaderCheckboxState();
-  if (!users.length) showNotice('<em>No users found.</em>', 'secondary');
 }
 
 // ---------------------------
@@ -110,7 +55,7 @@ filterInput?.addEventListener('input', () => {
     const show = name.includes(q) || email.includes(q);
     tr.classList.toggle('d-none', !show);
   });
-  updateHeaderCheckboxState();
+  updateHeaderCheckboxState(); // keep header checkbox in sync with visible rows
 });
 
 // ---------------------------
@@ -118,39 +63,26 @@ filterInput?.addEventListener('input', () => {
 // ---------------------------
 function renderRows(users) {
   const tbody = document.getElementById('userRows');
-  const rowsHtml = users.map(u => {
-    const last = u.last_login || u.last_activity || u.created_at || null;
-    const lastText = last ? new Date(last).toLocaleString() : '-';
-    const name = (u.name ?? '').toString();
-    const email = (u.email ?? '').toString();
-    const status = (u.status ?? '').toString();
-
-    return `
-      <tr data-id="${u.id}" data-name="${name.toLowerCase()}" data-email="${email.toLowerCase()}">
-        <td><input class="form-check-input row-check" type="checkbox" value="${u.id}"></td>
-        <td>${escapeHtml(name)}</td>
-        <td>${escapeHtml(email)}</td>
-        <td class="text-capitalize">${escapeHtml(status)}</td>
-        <td>${lastText}</td>
-      </tr>
-    `;
-  }).join('');
-
-  tbody.innerHTML = rowsHtml;
+  tbody.innerHTML = users.map(u => `
+    <tr data-id="${u.id}" data-name="${(u.name||'').toLowerCase()}" data-email="${(u.email||'').toLowerCase()}">
+      <td><input class="form-check-input row-check" type="checkbox" value="${u.id}"></td>
+      <td>${u.name}</td>
+      <td>${u.email}</td>
+      <td class="text-capitalize">${u.status}</td>
+      <td>${u.last_login ? new Date(u.last_login).toLocaleString() : '-'}</td>
+    </tr>
+  `).join('');
 
   // Bind row checkbox changes
   tbody.querySelectorAll('.row-check').forEach(cb => {
     cb.addEventListener('change', onRowSelectionChanged);
   });
 
-  // Apply current filter, if any
+  // Reset filter view if needed
   filterInput?.dispatchEvent(new Event('input'));
 
+  // Enable/disable toolbar based on selection
   updateToolbarButtons();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
 // ---------------------------
@@ -158,8 +90,8 @@ function escapeHtml(s) {
 // ---------------------------
 const checkAll = document.getElementById('checkAll');
 checkAll?.addEventListener('change', () => {
-  const visibleChecks = [...document.querySelectorAll('#userRows tr:not(.d-none) .row-check')];
-  visibleChecks.forEach(cb => cb.checked = checkAll.checked);
+  const visibleRows = [...document.querySelectorAll('#userRows tr:not(.d-none) .row-check')];
+  visibleRows.forEach(cb => cb.checked = checkAll.checked);
   updateHeaderCheckboxState();
   updateToolbarButtons();
 });
@@ -173,6 +105,7 @@ function updateHeaderCheckboxState() {
   const allVisible = [...document.querySelectorAll('#userRows tr:not(.d-none) .row-check')];
   const checkedVisible = allVisible.filter(cb => cb.checked);
 
+  // Handle checked / indeterminate
   if (allVisible.length === 0) {
     checkAll.checked = false;
     checkAll.indeterminate = false;
@@ -184,9 +117,10 @@ function updateHeaderCheckboxState() {
     checkAll.indeterminate = false;
   } else {
     checkAll.checked = false;
-    checkAll.indeterminate = true;
+    checkAll.indeterminate = true; // some but not all
   }
 
+  // "Grey out" when exactly one selected
   const oneSelected = checkedVisible.length === 1;
   checkAll.classList.toggle('checkall-one-selected', oneSelected);
 }
@@ -208,32 +142,31 @@ function updateToolbarButtons() {
 
 async function bulk(action) {
   const ids = selectedIds();
-  if (!ids.length) return;
+  if (!ids.length && action !== 'delete-unverified') return;
 
   let method, url, body;
   if (action === 'block' || action === 'unblock') {
     method = 'PATCH'; url = `/api/users/${action}`; body = JSON.stringify({ ids });
   } else if (action === 'delete') {
     method = 'DELETE'; url = `/api/users`; body = JSON.stringify({ ids });
+  } else if (action === 'delete-unverified') {
+    method = 'DELETE'; url = `/api/users/unverified`;
   }
 
-  try {
-    const res = await fetch(url, { method, headers: authHeaders(), body });
-    if (!res.ok) {
-      const msg = (await res.json().catch(() => ({}))).error || 'Action failed.';
-      alert(msg);
-      return;
-    }
-    await loadUsers();
-  } catch (err) {
-    console.error('Bulk action error:', err);
-    alert('Action failed.');
+  const res = await fetch(url, { method, headers: authHeaders(), body });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => ({}))).error || 'Action failed.';
+    alert(msg);
+    return;
   }
+  await loadUsers();
 }
 
+// Bind toolbar
 document.getElementById('btnBlock')?.addEventListener('click', () => bulk('block'));
 document.getElementById('btnUnblock')?.addEventListener('click', () => bulk('unblock'));
 document.getElementById('btnDelete')?.addEventListener('click', () => bulk('delete'));
+document.getElementById('btnDeleteUnverified')?.addEventListener('click', () => bulk('delete-unverified'));
 
 // ---------------------------
 // Sorting
@@ -257,22 +190,29 @@ document.querySelectorAll('th .sort-btn').forEach(btn => {
     e.preventDefault();
     const col = btn.dataset.sort;
     if (state.sort === col) {
+      // toggle direction
       state.dir = (state.dir === 'asc') ? 'desc' : 'asc';
     } else {
       state.sort = col;
+      // default to asc for text cols; desc for last_login
       state.dir = (col === 'last_login') ? 'desc' : 'asc';
     }
     await loadUsers();
   });
 });
 
-// ---------------------------
-// Logout
-// ---------------------------
 const logoutBtn = document.getElementById('logoutBtn');
 logoutBtn?.addEventListener('click', () => {
+  // clear tokens
   localStorage.removeItem('token');
   sessionStorage.removeItem('token');
+
+  // optional confirmation (remove if not needed)
+  if (confirm('Are you sure you want to log out?')) {
+    location.href = '/login.html';
+  }
+
+  // direct redirect
   location.href = '/login.html';
 });
 
