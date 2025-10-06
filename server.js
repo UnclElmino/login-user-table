@@ -5,7 +5,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
-const { Sequelize, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
+const sequelize = require('./db');
 
 const app = express();
 app.use(express.json());
@@ -14,19 +15,6 @@ app.use(express.static('public')); // serves /public/*
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
-
-// ---------- DB (Sequelize) ----------
-const sequelize = new Sequelize(
-  process.env.MYSQL_DB,
-  process.env.MYSQL_USER,
-  process.env.MYSQL_PASSWORD,
-  {
-    host: process.env.MYSQL_HOST,
-    port: Number(process.env.MYSQL_PORT || 3306),
-    dialect: 'mysql',
-    logging: false
-  }
-);
 
 const User = sequelize.define('User', {
   name: { type: DataTypes.STRING, allowNull: false },
