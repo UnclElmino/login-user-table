@@ -100,12 +100,11 @@ form.addEventListener('submit', async (e) => {
 
     if (!r.ok) {
       showAlert('danger', body.error || 'Invalid email or password.');
-      // Optional: focus the password field
       document.getElementById('password').focus();
       return;
     }
 
-    // store token (remember/session as you already do)
+    // store token
     if (rememberMe.checked) {
       localStorage.setItem('token', body.token);
     } else {
@@ -122,7 +121,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 function showAlert(type, msg) {
-  // type: 'danger' | 'success' | 'warning' | 'info'
+  // 'danger' | 'success' | 'warning' | 'info'
   alertBox.className = `alert alert-${type}`;
   alertBox.textContent = msg;
   alertBox.classList.remove('d-none');
