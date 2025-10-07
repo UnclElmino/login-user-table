@@ -11,18 +11,16 @@ const { Op } = require('sequelize');
 
 const app = express();
 
-// Parse BOTH JSON and regular HTML form posts
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// serve static files (login.html, reset.html, etc.) from /public
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
 const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
 
-// helpful startup logs
+// startup logs
 console.log('APP_BASE_URL =', APP_BASE_URL);
 console.log('DB target ->', process.env.DB_HOST, process.env.DB_PORT, process.env.DB_NAME);
 
@@ -30,7 +28,7 @@ const resendKeyOk = !!process.env.RESEND_API_KEY;
 console.log('Resend key loaded:', resendKeyOk);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ----- Model (unchanged) -----
+// ----- Model -----
 const User = sequelize.define('User', {
   name: { type: DataTypes.STRING, allowNull: false },
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
@@ -60,7 +58,7 @@ async function sendEmail(to, subject, html) {
   }
 }
 
-// ----- auth guard (unchanged) -----
+// ----- auth guard -----
 async function authGuard(req, res, next) {
   try {
     const auth = req.headers.authorization || '';
@@ -126,8 +124,8 @@ app.delete('/api/users', async (req, res) => {
   res.json({ deleted: count });
 });
 
-// ----- AUTH ROUTES -----
-// REGISTER (unchanged logic; only uses APP_BASE_URL safely)
+
+// REGISTER
 app.post('/auth/register', async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -160,7 +158,7 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// VERIFY (unchanged)
+// VERIFY
 app.get('/auth/verify', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).send('Missing token');
@@ -175,7 +173,7 @@ app.get('/auth/verify', async (req, res) => {
   res.send(`<h3>✅ Email verified!</h3><p>You can now <a href="/login.html">log in</a>.</p>`);
 });
 
-// LOGIN (works with JSON or form now)
+// LOGIN
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -194,7 +192,7 @@ app.post('/auth/login', async (req, res) => {
   res.json({ token, message: 'Logged in' });
 });
 
-// FORGOT (unchanged logic; uses APP_BASE_URL safely)
+// FORGOT
 app.post('/auth/forgot', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
@@ -220,7 +218,7 @@ app.post('/auth/forgot', async (req, res) => {
   res.json({ message: 'If that account exists, a reset link has been sent.' });
 });
 
-// RESET (unchanged; works with form posts now too)
+// RESET
 app.post('/auth/reset', async (req, res) => {
   const { token, password } = req.body || {};
   if (!token || !password) return res.status(400).json({ error: 'Missing data' });
@@ -237,10 +235,17 @@ app.post('/auth/reset', async (req, res) => {
   res.json({ message: 'Password successfully reset. You may now log in.' });
 });
 
-// USERS endpoints … (unchanged)
-
 // Root → login page
 app.get('/', (_req, res) => res.redirect('/login.html'));
+
+app.get('/debug/indexes', async (req, res) => {
+  try {
+    const [results] = await sequelize.query('SHOW INDEXES FROM users;');
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at ${APP_BASE_URL}`);

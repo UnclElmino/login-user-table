@@ -1,8 +1,6 @@
 // public/table.js
 
-// ---------------------------
 // Token + headers utilities
-// ---------------------------
 function getToken() {
   return sessionStorage.getItem('token') || localStorage.getItem('token');
 }
@@ -14,18 +12,14 @@ function authHeaders() {
   };
 }
 
-// ---------------------------
 // State
-// ---------------------------
 const state = {
-  sort: 'name',     // default sort by name
-  dir: 'asc',       // default ascending
-  users: [],        // fetched data
+  sort: 'name',
+  dir: 'asc',
+  users: [],
 };
 
-// ---------------------------
 // Fetch + render
-// ---------------------------
 async function loadUsers() {
   const res = await fetch(`/api/users?sort=${encodeURIComponent(state.sort)}&dir=${encodeURIComponent(state.dir)}`, {
     headers: authHeaders()
@@ -43,9 +37,7 @@ async function loadUsers() {
   updateHeaderCheckboxState();
 }
 
-// ---------------------------
-// Filtering (client-side quick filter for name/email)
-// ---------------------------
+// Filtering
 const filterInput = document.getElementById('filterInput');
 filterInput?.addEventListener('input', () => {
   const q = filterInput.value.trim().toLowerCase();
@@ -55,12 +47,10 @@ filterInput?.addEventListener('input', () => {
     const show = name.includes(q) || email.includes(q);
     tr.classList.toggle('d-none', !show);
   });
-  updateHeaderCheckboxState(); // keep header checkbox in sync with visible rows
+  updateHeaderCheckboxState();
 });
 
-// ---------------------------
 // Row rendering
-// ---------------------------
 function renderRows(users) {
   const tbody = document.getElementById('userRows');
   tbody.innerHTML = users.map(u => `
@@ -73,21 +63,16 @@ function renderRows(users) {
     </tr>
   `).join('');
 
-  // Bind row checkbox changes
   tbody.querySelectorAll('.row-check').forEach(cb => {
     cb.addEventListener('change', onRowSelectionChanged);
   });
 
-  // Reset filter view if needed
   filterInput?.dispatchEvent(new Event('input'));
 
-  // Enable/disable toolbar based on selection
   updateToolbarButtons();
 }
 
-// ---------------------------
 // Select-all behavior
-// ---------------------------
 const checkAll = document.getElementById('checkAll');
 checkAll?.addEventListener('change', () => {
   const visibleRows = [...document.querySelectorAll('#userRows tr:not(.d-none) .row-check')];
@@ -105,7 +90,6 @@ function updateHeaderCheckboxState() {
   const allVisible = [...document.querySelectorAll('#userRows tr:not(.d-none) .row-check')];
   const checkedVisible = allVisible.filter(cb => cb.checked);
 
-  // Handle checked / indeterminate
   if (allVisible.length === 0) {
     checkAll.checked = false;
     checkAll.indeterminate = false;
@@ -117,17 +101,15 @@ function updateHeaderCheckboxState() {
     checkAll.indeterminate = false;
   } else {
     checkAll.checked = false;
-    checkAll.indeterminate = true; // some but not all
+    checkAll.indeterminate = true;
   }
 
-  // "Grey out" when exactly one selected
+  // Grey out
   const oneSelected = checkedVisible.length === 1;
   checkAll.classList.toggle('checkall-one-selected', oneSelected);
 }
 
-// ---------------------------
 // Toolbar actions
-// ---------------------------
 function selectedIds() {
   return [...document.querySelectorAll('#userRows .row-check:checked')].map(cb => Number(cb.value));
 }
@@ -168,9 +150,7 @@ document.getElementById('btnUnblock')?.addEventListener('click', () => bulk('unb
 document.getElementById('btnDelete')?.addEventListener('click', () => bulk('delete'));
 document.getElementById('btnDeleteUnverified')?.addEventListener('click', () => bulk('delete-unverified'));
 
-// ---------------------------
 // Sorting
-// ---------------------------
 function updateSortIndicators() {
   document.querySelectorAll('th .sort-btn').forEach(btn => {
     const icon = btn.querySelector('.bi');
@@ -190,11 +170,9 @@ document.querySelectorAll('th .sort-btn').forEach(btn => {
     e.preventDefault();
     const col = btn.dataset.sort;
     if (state.sort === col) {
-      // toggle direction
       state.dir = (state.dir === 'asc') ? 'desc' : 'asc';
     } else {
       state.sort = col;
-      // default to asc for text cols; desc for last_login
       state.dir = (col === 'last_login') ? 'desc' : 'asc';
     }
     await loadUsers();
@@ -207,18 +185,14 @@ logoutBtn?.addEventListener('click', () => {
   localStorage.removeItem('token');
   sessionStorage.removeItem('token');
 
-  // optional confirmation (remove if not needed)
   if (confirm('Are you sure you want to log out?')) {
     location.href = '/login.html';
   }
 
-  // direct redirect
   location.href = '/login.html';
 });
 
-// ---------------------------
 // Boot
-// ---------------------------
 const token = getToken();
 if (!token) {
   location.href = '/login.html';

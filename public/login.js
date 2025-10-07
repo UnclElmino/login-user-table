@@ -13,9 +13,7 @@ let mode = 'login';
 
 const alertBox = document.getElementById('formAlert');
 
-// -------------------------
-// TOGGLE LOGIN ↔ SIGNUP
-// -------------------------
+// TOGGLE LOGIN <-> SIGNUP
 toggleLink.addEventListener('click', (e) => {
   e.preventDefault();
   if (mode === 'login') {
@@ -41,9 +39,7 @@ toggleLink.addEventListener('click', (e) => {
   }
 });
 
-// -------------------------
 // FORM SUBMIT HANDLER
-// -------------------------
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideAlert();
@@ -77,7 +73,7 @@ form.addEventListener('submit', async (e) => {
         return;
       }
       showAlert('info', 'Registered! Check your email for the verification link.');
-      // wait a few seconds, then switch to login mode
+      // wait a few seconds
       setTimeout(() => {
         // switch UI back to login mode
         mode = 'login';
